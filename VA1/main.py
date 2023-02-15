@@ -1,5 +1,7 @@
-from PIL import Image, ImageDraw
-import keyboard
+from PIL import Image, ImageDraw, ImageTk
+import tkinter
+from threading import Thread
+
 
 class Triangulo3D:
     def __init__(self, file:str) -> None:
@@ -12,6 +14,7 @@ class Triangulo3D:
         self.triangulos = []
         self._preencher_malha()
         self._criar_triangulos()
+        print(self.pontos_arestas())
 
     def _open_file(self, file:str):
         with open(file, 'r') as arquivo:
@@ -35,7 +38,12 @@ class Triangulo3D:
             y, linha = self._procura_numero(linha)
             z, _ = self._procura_numero(linha)
             self.indice_vert_triangulos.append((x, y, z))
-
+    def pontos_arestas(self):
+        pontos = set()
+        for triangulo in self.triangulos:
+            pontos.update(triangulo.pontos_arestas())
+        return list(pontos)
+    
     def _procura_numero(self, linha:str):
         num = ''
         continua = 0
@@ -60,6 +68,33 @@ class Triangulo2D:
         self.verticeA = vertices[0]
         self.verticeB = vertices[1]
         self.verticeC = vertices[2]
+
+    def pontos_arestas(self):
+        vertices = [tuple(self.verticeA), tuple(self.verticeB), tuple(self.verticeC)]
+        vertices_aux = list(vertices)
+        pontos = set()
+        for vertice in vertices:
+            vertices_aux.pop(0)
+            for vertice_aux in vertices_aux:
+                pontos.update(self._interpolacao_linear(vertice, vertice_aux))
+        return list(pontos)
+
+    def _interpolacao_linear(self, ponto1:tuple, ponto2:tuple):
+        vetor_ponto2to1 = self._sub_pontos(ponto2, ponto1)
+        pontos = set()
+        range1 = [x*0.01 for x in range(0, 101)]
+        for b in range1:
+            ponto = self._add_pontos(ponto1, self._mult_vetor_escalar(vetor_ponto2to1, b))
+            pontos.add(ponto)
+        return list(pontos)
+    
+    def _mult_vetor_escalar(self, vetor:tuple, k:float):
+        return (int(vetor[0] * k), int(vetor[1] * k), int(vetor[2] * k))
+    def _add_pontos(self, ponto1:tuple, ponto2:tuple):
+        return (ponto1[0] + ponto2[0], ponto1[1] + ponto2[1], ponto1[2] + ponto2[2])
+
+    def _sub_pontos(self, ponto1:tuple, ponto2:tuple):
+        return (ponto1[0] - ponto2[0], ponto1[1] - ponto2[1], ponto1[2] - ponto2[2])
 
 class Camera:
     def __init__(self, file:str) -> None:
@@ -122,9 +157,34 @@ class Main:
         file_camera = input('Qual o dir do arquivo dos Parâmetros da Câmera: ')
         self.triangulo3D = Triangulo3D(file_triangulo)
         self.camera = Camera(file_camera)
+        img = Image.new('RGB', (100, 100), 'black')
         while True:
+            self.showPIL(img)
             print('CTRL+L -> RECARREGAR')
-            keyboard.wait('ctrl+l')
             self.triangulo3D.recarregar()
+
+    def showPIL(self, pilImage):
+        root = tkinter.Tk()
+        w, h = root.winfo_screenwidth(), root.winfo_screenheight()
+        root.overrideredirect(1)
+        root.geometry("%dx%d+0+0" % (w, h))
+        root.focus_set()    
+        root.bind("<Escape>", lambda e: (e.widget.withdraw(), e.widget.quit()))
+        canvas = tkinter.Canvas(root,width=w,height=h)
+        canvas.pack()
+        canvas.configure(background='black')
+        imgWidth, imgHeight = pilImage.size
+        if imgWidth > w or imgHeight > h:
+            ratio = min(w/imgWidth, h/imgHeight)
+            imgWidth = int(imgWidth*ratio)
+            imgHeight = int(imgHeight*ratio)
+            pilImage = pilImage.resize((imgWidth,imgHeight), Image.ANTIALIAS)
+        image = ImageTk.PhotoImage(pilImage)
+        imagesprite = canvas.create_image(w/2,h/2,image=image)
+        root.bind('ctrl', root.quit)
+        tkinter.Button(root, text="Quit", command=root.destroy).pack()
+        root.mainloop()
+        print('deuu')
+
 if __name__ == '__main__':
     Main()
