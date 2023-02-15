@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageTk
-import tkinter
+import tkinter as tk
 from threading import Thread
 
 
@@ -157,34 +157,32 @@ class Main:
         file_camera = input('Qual o dir do arquivo dos Parâmetros da Câmera: ')
         self.triangulo3D = Triangulo3D(file_triangulo)
         self.camera = Camera(file_camera)
-        img = Image.new('RGB', (100, 100), 'black')
         while True:
-            self.showPIL(img)
-            print('CTRL+L -> RECARREGAR')
+            self.showPIL()
             self.triangulo3D.recarregar()
 
-    def showPIL(self, pilImage):
-        root = tkinter.Tk()
-        w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-        root.overrideredirect(1)
-        root.geometry("%dx%d+0+0" % (w, h))
-        root.focus_set()    
-        root.bind("<Escape>", lambda e: (e.widget.withdraw(), e.widget.quit()))
-        canvas = tkinter.Canvas(root,width=w,height=h)
+    def showPIL(self):
+        # create the main window
+        root = tk.Tk()
+        x = 600
+        y = 600
+        # create a canvas
+        canvas = tk.Canvas(root, width=x, height=y)
         canvas.pack()
-        canvas.configure(background='black')
-        imgWidth, imgHeight = pilImage.size
-        if imgWidth > w or imgHeight > h:
-            ratio = min(w/imgWidth, h/imgHeight)
-            imgWidth = int(imgWidth*ratio)
-            imgHeight = int(imgHeight*ratio)
-            pilImage = pilImage.resize((imgWidth,imgHeight), Image.ANTIALIAS)
-        image = ImageTk.PhotoImage(pilImage)
-        imagesprite = canvas.create_image(w/2,h/2,image=image)
-        root.bind('ctrl', root.quit)
-        tkinter.Button(root, text="Quit", command=root.destroy).pack()
+        img = Image.new('RGB', (100, 100), 'black')
+        img = img.resize((x,y))
+        img = ImageTk.PhotoImage(img)
+        # load the image
+
+        # add the image to the canvas
+        canvas.create_image(0, 0, anchor="nw", image=img)
+
+        # add a button on top of the image
+        button = tk.Button(root, text="Click Me!", command=lambda: root.destroy())
+        button_window = canvas.create_window(x-100, y-50, anchor="nw", window=button)
+
+        # run the main loop
         root.mainloop()
-        print('deuu')
 
 if __name__ == '__main__':
     Main()
