@@ -21,8 +21,8 @@ class Main:
         self.stop = False
         while True:
             self.triangulo3D.recarregar()
-            self.pontos_arestas = self.triangulo3D.pontos_arestas()
-            self.pontos_vista = self.camera.recarregar(self.pontos_arestas)
+            self.faces_vertices = self.triangulo3D.get_vertices()
+            self.pontos_vista = self.camera.recarregar(self.faces_vertices)
             self.showPIL()
             if self.stop:
                 break
@@ -39,8 +39,6 @@ class Main:
         img_draw = ImageDraw.Draw(img)
         for ponto in self.pontos_vista:
             img_draw.point(ponto, fill='white')
-        """for ponto in self.triangulo3D.pontos_arestas():
-            img_draw.point((ponto[0], ponto[1]), fill='white')"""
         img = ImageTk.PhotoImage(img)
         
         canvas.create_image(0, 0, anchor="nw", image=img)

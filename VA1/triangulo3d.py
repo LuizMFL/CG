@@ -4,12 +4,10 @@ class Triangulo3D:
     def __init__(self, file:str) -> None:
         self.file = file
     
-    def pontos_arestas(self):
-        pontos = set()
-        for triangulo in self.triangulos:
-            pontos.update(triangulo.pontos_arestas())
-        return list(pontos)
-    
+    def get_vertices(self):
+        vertices = [triangulo.get_vertices() for triangulo in self.triangulos]
+        return vertices
+
     def recarregar(self):
         self.vertices = []
         self.indice_vert_triangulos = []
