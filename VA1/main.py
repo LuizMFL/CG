@@ -1,6 +1,5 @@
 from PIL import Image, ImageDraw, ImageTk
 import tkinter as tk
-from threading import Thread
 from triangulo3d import Triangulo3D
 from camera import Camera
 from pathlib import Path
@@ -21,8 +20,8 @@ class Main:
         self.stop = False
         while True:
             self.triangulo3D.recarregar()
-            self.faces_vertices = self.triangulo3D.get_vertices()
-            self.pontos_vista = self.camera.recarregar(self.faces_vertices)
+            self.faces_triangulos = self.triangulo3D.get_triangulos() # face_triangulo = (A, B, C) onde A,B,C = (x,y,z)
+            self.pontos_vista = self.camera.recarregar(self.faces_triangulos)
             self.showPIL()
             if self.stop:
                 break

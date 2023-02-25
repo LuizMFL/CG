@@ -1,13 +1,12 @@
-from triangulo2d import Triangulo2D
-
 class Triangulo3D:
     def __init__(self, file:str) -> None:
         self.file = file
     
-    def get_vertices(self):
-        vertices = [triangulo.get_vertices() for triangulo in self.triangulos]
-        return vertices
+    #OK!
+    def get_triangulos(self):
+        return self.triangulos
 
+    #OK!
     def recarregar(self):
         self.vertices = []
         self.indice_vert_triangulos = []
@@ -15,18 +14,21 @@ class Triangulo3D:
         self._preencher_malha()
         self._criar_triangulos()
 
+    #OK!
     def _criar_triangulos(self):
         for indices in self.indice_vert_triangulos:
             vertices = []
             vertices.append(tuple(self.vertices[indices[0] - 1]))
             vertices.append(tuple(self.vertices[indices[1] - 1]))
             vertices.append(tuple(self.vertices[indices[2] - 1]))
-            self.triangulos.append(Triangulo2D(vertices))
+            self.triangulos.append((vertices[0], vertices[1], vertices[2]))
 
+    #OK!
     def _open_file(self, file:str):
         with open(file, 'r') as arquivo:
             return arquivo.readlines()
-        
+    
+    #OK!
     def _preencher_malha(self):
         texto = self._open_file(self.file)
         linha1 = texto.pop(0)
@@ -46,6 +48,7 @@ class Triangulo3D:
             z, _ = self._procura_numero(linha, int)
             self.indice_vert_triangulos.append((x, y, z))
 
+    #OK!
     def _procura_numero(self, linha:str, tipo=float):
         num = ''
         continua = 0

@@ -6,7 +6,7 @@ class Camera:
         self.Resx = Resx
         self.Resy = Resy
 
-    #!
+    #?
     def recarregar(self, faces_vertices):
         self.vetorN = ()
         self.vetorV = ()
@@ -14,38 +14,20 @@ class Camera:
         self.escalarD = None
         self.escalarHx = None
         self.escalarHy = None
-        self.preencher_parametros()
+        self.carregar_parametros()
         vertices_vista = self.mudanca_coordenadas_mundiais_to_vista(faces_vertices) # return list((A, B, C)) onde A,B,C = (x, y, z)
         vertices_perspectiva_vista = self.proj_perspectiva(vertices_vista) # return list((A, B, C)) onde A,B,C = (x, y)
         faces_vertices_tela = self.mudanca_coordenadas_vista_to_tela(vertices_perspectiva_vista) # return list((A, B, C)) onde A,B,C = (x, y)
         pontos_tela = self.rasterizacao_triangulos(faces_vertices_tela) # return list(linha,linha, ...) onde linha = (A,B,C,...)
-        #pontos_tela = self.rasterizacao_poligono(faces_vertices_tela)
         return pontos_tela
 
-    #!
-    def rasterizacao_poligono(self, faces_vertices_tela):
-        pontos = []
-        for face in faces_vertices_tela:
-            A, B, C = self._vertice_y_menor(face)
-            linhaAB = self._rasterizacao_linha(A, B)
-            linhaAC = self._rasterizacao_linha(A, C)
-            linhaBC = self._rasterizacao_linha(B, C)
-            pontos_aux = linhaAB + linhaAC + linhaBC
-            for y in range(A[1], C[1]):
-                pontos_horizontal = [(x1,y1) for x1,y1 in pontos_aux if y1 == y]
-                pontos += pontos_horizontal
-                pontos_horizontal_aux = list(pontos_horizontal)
-                while len(pontos_horizontal_aux):
-                    ponto = pontos_horizontal_aux.pop()
-                    if len(pontos_horizontal_aux):
-                        ponto_aux = pontos_horizontal_aux.pop()
-                        step = 1 if ponto[0] <= ponto_aux[0] else -1
-                        for x in range(ponto[0], ponto_aux[0] + step, step):
-                            pontos.append((x, y))
+    #OK!
+    def carregar_parametros(self):
+        self._preencher_parametros()
+        self._ortogonalizar_vetorV()
+        self._processo_Gram_Schmidt()
 
-        print(pontos)
-        return pontos
-    
+    #OK!
     def _vertice_y_menor(self, vertices):
         face_aux = list(vertices)
         x0_y0 = face_aux[0] if face_aux[0][1] <= face_aux[1][1] else face_aux[1]
@@ -67,65 +49,76 @@ class Camera:
         pontos = []
         for face in faces_vertices_tela:
             x0_y0, x1_y1, x2_y2 = self._vertice_y_menor(face) 
-
             deltax1_0 = x1_y1[0] - x0_y0[0]
             deltay1_0 = x1_y1[1] - x0_y0[1]
             deltax2_0 = x2_y2[0] - x0_y0[0]
             deltay2_0 = x2_y2[1] - x0_y0[1]
-
-            if not deltay1_0 == 0:
-                x_min = x0_y0[0]
-                x_max = x0_y0[0]
-                declive1_0 = deltax1_0/deltay1_0
+            try:
                 declive2_0 = deltax2_0/deltay2_0
+                x3 = x0_y0[0]
+                for y2 in range(x0_y0[1], x1_y1[1]):
+                    x3 += declive2_0
+                # Criando quarto vertice
+                x3_y3 = (x3, x1_y1[1])
 
-                stepx = 1 if deltax1_0 >= 0 else -1
-                for y in range(x0_y0[1], x1_y1[1] + 1):
-                    if x_min <= x_max:
-                        for x in range(round(x_min), round(x_max) + stepx, stepx):
-                            pontos.append((x,y))
-                    else:
-                        for x in range(round(x_max), round(x_min) + stepx, stepx):
-                            pontos.append((x,y))
-                    x_min += declive1_0
-                    x_max += declive2_0
-
-                x3_y3 = (round(x_max),x1_y1[1])
+                deltax3_0 = x3_y3[0] - x0_y0[0]
+                deltay3_0 = x3_y3[1] - x0_y0[1]
                 deltax1_2 = x1_y1[0] - x2_y2[0]
                 deltay1_2 = x1_y1[1] - x2_y2[1]
                 deltax3_2 = x3_y3[0] - x2_y2[0]
                 deltay3_2 = x3_y3[1] - x2_y2[1]
 
-                stepx = 1 if deltax1_2 >=0 else -1
-                if not deltay1_2 == 0:
+                if not deltay1_0 == 0:
+                    x_min = x0_y0[0]
+                    x_max = x0_y0[0]
+                    declive1_0 = deltax1_0/deltay1_0
+                    declive3_0 = deltax3_0/deltay3_0
+                    for y in range(x0_y0[1], x1_y1[1] + 1):
+                        for x in range(round(x_min), round(x_max) + 1):
+                                pontos.append((x,y))
+                        if deltax1_0 < deltax3_0:
+                            x_min += declive1_0
+                            x_max += declive3_0
+                        else:
+                            x_min += declive3_0
+                            x_max += declive1_0
+
+                    if not deltay1_2 == 0:
+                        x_min = x2_y2[0]
+                        x_max = x2_y2[0]
+                        declive3_2 = deltax3_2/deltay3_2
+                        declive1_2 = deltax1_2/deltay1_2
+                        for y in range(x2_y2[1], x1_y1[1] - 1, -1):
+                            for x in range(round(x_min), round(x_max) + 1):
+                                    pontos.append((x,y))
+                            if deltax1_2 > deltax3_2:
+                                x_min -= declive3_2
+                                x_max -= declive1_2
+                            else:
+                                x_min -= declive1_2
+                                x_max -= declive3_2
+                else:
                     x_min = x2_y2[0]
                     x_max = x2_y2[0]
                     declive3_2 = deltax3_2/deltay3_2
                     declive1_2 = deltax1_2/deltay1_2
                     for y in range(x2_y2[1], x1_y1[1] - 1, -1):
-                        if x_min <= x_max:
-                            for x in range(round(x_min), round(x_max) + stepx, stepx):
+                        for x in range(round(x_min), round(x_max) + 1):
                                 pontos.append((x,y))
+                        if deltax1_2 > deltax3_2:
+                            x_min -= declive3_2
+                            x_max -= declive1_2
                         else:
-                            for x in range(round(x_max), round(x_min) + stepx, stepx):
-                                pontos.append((x,y))
-                        x_min -= declive1_2
-                        x_max -= declive3_2
-                else:
-                    for x in range(x2_y2[0], x1_y1[0] + stepx, stepx):
-                        pontos.append((x, x2_y2[1]))
-            else:
-                for x in range(x0_y0[0], x1_y1[0]):
-                        pontos.append((x, x0_y0[1]))
+                            x_min -= declive1_2
+                            x_max -= declive3_2
+            except ZeroDivisionError:
+                print(f'Todos os vertices estão contidos em uma linha que passa por Y={x2_y2[1]}: {x0_y0} - {x1_y1} - {x2_y2}')
+                for x in range(x0_y0[0], x2_y2[0]):
+                    pontos.append((x, x0_y0[1]))
         return pontos
-
-
 
     #OK!
     def mudanca_coordenadas_mundiais_to_vista(self, faces_vertices):
-        self._ortogonalizar_vetorV()
-        self._processo_Gram_Schmidt()
-        #self.matriz_mundiais_to_vista = [self.base_ortonormal[0], self.base_ortonormal[1], self.base_ortonormal[2]]
         vertices_vista = []
         for face in faces_vertices:
             vetor_c_to_face0 = self._sub_de_Pontos_or_Vetores(face[0], self.pontoC)
@@ -136,7 +129,7 @@ class Camera:
             vertice_linha2 = self._mult_matriz_to_vetor(vetor_c_to_face2)
             vertices_vista.append((vertice_linha0, vertice_linha1, vertice_linha2))
         return vertices_vista
-    
+
     #OK!
     def mudanca_coordenadas_vista_to_tela(self, vertices_perspectiva_vista):
         vertices_perspectiva_vista_normal = self._coordenadas_normalizadas(vertices_perspectiva_vista) # return list((A, B, C)) onde A,B,C = (x, y)
@@ -149,7 +142,7 @@ class Camera:
         return vertices_tela
     
     #OK!
-    def preencher_parametros(self):
+    def _preencher_parametros(self):
         texto = self._open_file(self.file)
         for linha in texto:
             chr = linha[0].upper()
@@ -174,7 +167,7 @@ class Camera:
                 else:
                     self.escalarHy = var
         # print(f'CAMERA->N={self.vetorN},V={self.vetorV},C={self.pontoC},d={self.escalarD},hx={self.escalarHx},hy={self.escalarHy}')
-    
+
     #OK!
     def proj_perspectiva(self, vertices_vista):
         vertices_perspectiva_vista = []
@@ -184,11 +177,11 @@ class Camera:
             vertice_perspectiva_vista2 = (self.escalarD * (face[2][0] / face[2][2]), self.escalarD * (face[2][1] / face[2][2]))
             vertices_perspectiva_vista.append((vertice_perspectiva_vista0, vertice_perspectiva_vista1, vertice_perspectiva_vista2))
         return vertices_perspectiva_vista
-    
+
     #OK!
     def _add_de_Vetores(self, vetorU, vetorV):
         return (vetorU[0] + vetorV[0], vetorU[1] + vetorV[1], vetorU[2] + vetorV[2])
-    
+
     #OK!
     def _coordenadas_normalizadas(self, vertices_perspectiva_vista):
         vertices_perspectiva_vista_normal = []
@@ -206,7 +199,7 @@ class Camera:
     #OK!
     def _mult_Ponto_or_Vetor_to_escalar(self, p_or_v, k):
         return (p_or_v[0] * k, p_or_v[1] * k, p_or_v[2] * k)
-    
+
     #OK!
     def _mult_matriz_to_vetor(self, vetorU):
         matriz = self.base_ortonormal
@@ -215,7 +208,7 @@ class Camera:
         z = matriz[2][0] * vetorU[0] + matriz[2][1] * vetorU[1] + matriz[2][2] * vetorU[2]
         p_linha = (x, y, z)
         return p_linha
-    
+
     #OK!
     def _normalizacao_vetoresNVU(self):
         normaN = self._norma_vetor(self.vetorN)
@@ -224,7 +217,7 @@ class Camera:
         self.vetorV_linha_normalizado = self._mult_Ponto_or_Vetor_to_escalar(self.vetorV_linha, normaV_linha)
         normaU = self._norma_vetor(self.vetorU)
         self.vetorU_normalizado = self._mult_Ponto_or_Vetor_to_escalar(self.vetorU, normaU)
-    
+
     #OK!
     def _norma_vetor(self, vetorU):
         norma = sqrt(self._prod_escalar(vetorU, vetorU))
@@ -234,12 +227,12 @@ class Camera:
     def _ortogonalizar_vetorV(self):
         projV_N = self._proj_ortogonal_vetores(self.vetorV, self.vetorN)
         self.vetorV_linha = self._sub_de_Pontos_or_Vetores(self.vetorV, projV_N)
-    
+
     #OK!
     def _open_file(self, file:str):
         with open(file, 'r') as arquivo:
             return arquivo.readlines()
-    
+
     #OK!
     def _prod_vetorial(self, vetorU, vetorV):
         vetorI = (1, 0, 0)
@@ -267,6 +260,7 @@ class Camera:
         self._encontrar_vetorU()
         self._normalizacao_vetoresNVU()
         self.base_ortonormal = (self.vetorU_normalizado, self.vetorV_linha_normalizado, self.vetorN_normalizado)
+
     #OK!
     def _procura_numero(self, linha:str, tipo=float):
         num = ''
@@ -287,33 +281,10 @@ class Camera:
         k = u_v / v_v
         result = self._mult_Ponto_or_Vetor_to_escalar(vetorV, k)
         return result
-    
+
     #OK!
     def _prod_escalar(self, vetorU, vetorV):
         return vetorU[0] * vetorV[0] + vetorU[1] * vetorV[1] + vetorU[2] * vetorV[2]
-    
-    #OK!
-    def _rasterizacao_linha(self, verticeU, verticeV):
-        pontos_in_linha = []
-        deltax = verticeV[0] - verticeU[0]
-        deltay = verticeV[1] - verticeU[1]
-        if not deltax == 0:
-            error = 0
-            declive = abs(deltay / deltax)
-            y = verticeU[1]
-            step = 1 if verticeU[0] < verticeV[0] else -1
-            soma_y = 1 if verticeU[1] < verticeV[1] else -1
-            for x in range(verticeU[0], verticeV[0], step):
-                pontos_in_linha.append((x,y))
-                error += declive
-                if error >= 0.5:
-                    y += soma_y
-        else:
-            x = verticeU[0]
-            step = 1 if verticeU[1] < verticeV[1] else -1
-            for y in range(verticeU[1], verticeV[1], step):
-                pontos_in_linha.append((x, y))
-        return pontos_in_linha
 
     #OK!
     def _sub_de_Pontos_or_Vetores(self, p_v1, p_v2):
