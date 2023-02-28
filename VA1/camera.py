@@ -14,7 +14,7 @@ class Camera:
         self.escalarD = None
         self.escalarHx = None
         self.escalarHy = None
-        self.carregar_parametros()
+        self.carregar_parametros() #OK
         vertices_vista = self.mudanca_coordenadas_mundiais_to_vista(faces_vertices) # return list((A, B, C)) onde A,B,C = (x, y, z)
         vertices_perspectiva_vista = self.proj_perspectiva(vertices_vista) # return list((A, B, C)) onde A,B,C = (x, y)
         faces_vertices_tela = self.mudanca_coordenadas_vista_to_tela(vertices_perspectiva_vista) # return list((A, B, C)) onde A,B,C = (x, y)
@@ -130,7 +130,7 @@ class Camera:
             vertices_vista.append((vertice_linha0, vertice_linha1, vertice_linha2))
         return vertices_vista
 
-    #OK!
+    #? ROUND???
     def mudanca_coordenadas_vista_to_tela(self, vertices_perspectiva_vista):
         vertices_perspectiva_vista_normal = self._coordenadas_normalizadas(vertices_perspectiva_vista) # return list((A, B, C)) onde A,B,C = (x, y)
         vertices_tela = []
@@ -203,9 +203,9 @@ class Camera:
     #OK!
     def _mult_matriz_to_vetor(self, vetorU):
         matriz = self.base_ortonormal
-        x = matriz[0][0] * vetorU[0] + matriz[0][1] * vetorU[1] + matriz[0][2] * vetorU[2]
-        y = matriz[1][0] * vetorU[0] + matriz[1][1] * vetorU[1] + matriz[1][2] * vetorU[2]
-        z = matriz[2][0] * vetorU[0] + matriz[2][1] * vetorU[1] + matriz[2][2] * vetorU[2]
+        x = (matriz[0][0] * vetorU[0]) + (matriz[0][1] * vetorU[1]) + (matriz[0][2] * vetorU[2])
+        y = (matriz[1][0] * vetorU[0]) + (matriz[1][1] * vetorU[1]) + (matriz[1][2] * vetorU[2])
+        z = (matriz[2][0] * vetorU[0]) + (matriz[2][1] * vetorU[1]) + (matriz[2][2] * vetorU[2])
         p_linha = (x, y, z)
         return p_linha
 
@@ -284,7 +284,7 @@ class Camera:
 
     #OK!
     def _prod_escalar(self, vetorU, vetorV):
-        return vetorU[0] * vetorV[0] + vetorU[1] * vetorV[1] + vetorU[2] * vetorV[2]
+        return (vetorU[0] * vetorV[0]) + (vetorU[1] * vetorV[1]) + (vetorU[2] * vetorV[2])
 
     #OK!
     def _sub_de_Pontos_or_Vetores(self, p_v1, p_v2):
