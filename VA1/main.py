@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageTk
 import tkinter as tk
 from triangulo3d import Triangulo3D
 from camera import Camera
+from camera2 import Camera as Cam2
 from pathlib import Path
 
 PATH = Path(__file__).parent
@@ -12,21 +13,19 @@ class Main:
         print(f'Parametros_Camera dir -> {path_camera}')
         self.file_camera = path_camera
         self.file_triangulo = input('Qual dir do arquivo OBJETO para abrir: ')
-        self.Resx = 1000
-        self.Resy = 1000
-        print(f'Resolução de tela -> ({self.Resx},{self.Resy})')
         self.triangulo3D = Triangulo3D(self.file_triangulo)
-        self.camera = Camera(self.file_camera, self.Resx, self.Resy)
+        self.camera = Cam2(self.file_camera)
         self.stop = False
         while True:
             self.triangulo3D.recarregar()
             self.faces_triangulos = self.triangulo3D.get_triangulos() # face_triangulo = (A, B, C) onde A,B,C = (x,y,z)
             self.pontos_vista = self.camera.recarregar(self.faces_triangulos)
+            self.Resx = self.camera.Resx
+            self.Resy = self.camera.Resy
             self.showPIL()
             if self.stop:
                 break
-            
-            
+
 
     def showPIL(self):
         root = tk.Tk()
