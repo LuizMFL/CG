@@ -1,7 +1,6 @@
 from PIL import Image, ImageDraw, ImageTk
 import tkinter as tk
 from triangulo3d import Triangulo3D
-from camera import Camera
 from camera2 import Camera as Cam2
 from pathlib import Path
 

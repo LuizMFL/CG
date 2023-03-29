@@ -17,12 +17,13 @@ class Camera:
         self.Resy = self.escalarHy * 250
         
         vertices_vista = self.mudanca_coordenadas_mundiais_to_vista(faces_vertices) # return list((A, B, C)) onde A,B,C = (x, y, z)
-        vertices_perspectiva_vista = self.proj_perspectiva(vertices_vista) # return list((A, B, C)) onde A,B,C = (x, y)
-        #! Calcular Normal de cada Triângulo
-        #! Calcular Normal de cada Vértice
+        normal_triangulos = self._calcular_normal_triangulos(vertices_vista)
+        normal_vertices = self._calcular_normal_vertices(normal_triangulos)
+        print(normal_vertices)
         y = [9999999999999 for _ in range(0,self.Resy)]
         self.matriz_z_buffer = [y for _ in range(0, self.Resx)] # Primeiro coordenada X depois Y
         
+        vertices_perspectiva_vista = self.proj_perspectiva(vertices_vista) # return list((A, B, C)) onde A,B,C = (x, y) 
         faces_vertices_tela = self.mudanca_coordenadas_vista_to_tela(vertices_perspectiva_vista) # return list((A, B, C)) onde A,B,C = (x, y)
         #! Dentro do scanline, para cada PONTO encontrar o P original; E então Consultar/Atualizar o z-buffer, se a coordenada z de P < z atual do z-buffer, então ele precisa ser desenhado e para isso tem os seguintes:
         #? atual do z-buffer vai ser igual à coordenada atual
@@ -41,6 +42,27 @@ class Camera:
             self.matriz_z_buffer[ponto[0]][ponto[1]] = int(ponto[2])
             return True
         return False
+    
+    def _calcular_normal_triangulos(self, triangulos:list):
+        normal_triangulos = []
+        for vertices in triangulos:
+            v1 = self._sub_de_Pontos_or_Vetores(vertices[1], vertices[0])
+            v2 = self._sub_de_Pontos_or_Vetores(vertices[2], vertices[0])
+            v3 = self._produto_vetorial(v1, v2)
+            normal = self._norma_vetor(v3)
+            normal_triangulos.append((vertices, normal))
+        return normal_triangulos
+
+    def _calcular_normal_vertices(self, normal_triangulos:list[tuple]):
+        normal_vertices = {}
+        for normal_triangulo in normal_triangulos:
+            for vertice in normal_triangulo[0]:
+                if not vertice in normal_vertices.keys():
+                    normal_vertices[vertice] = normal_triangulo[1]
+                else:
+                    normal_vertices[vertice] += normal_triangulo[1]
+        normal_vertices = [(x, normal_vertices[x]) for x in normal_vertices.keys()]
+        return normal_vertices
     
     
     def carregar_parametros(self):
@@ -163,12 +185,14 @@ class Camera:
         return vertices_perspectiva_vista_normal
     
     def _encontrar_vetorU(self):
-        x = (self.vetorN[1] * self.vetorV[2]) - (self.vetorN[2] * self.vetorV[1])
-        y = (self.vetorN[2] * self.vetorV[0]) - (self.vetorN[0] * self.vetorV[2])
-        z = (self.vetorN[0] * self.vetorV[1]) - (self.vetorN[1] * self.vetorV[0])
-        self.vetorU = (x, y, z)
-        #self.vetorU = self._prod_vetorial(self.vetorN, self.vetorV_linha)
+        self.vetorU = self._produto_vetorial(self.vetorN, self.vetorV)
 
+    def _produto_vetorial(self, vetor1:tuple, vetor2:tuple):
+        x = (vetor1[1] * vetor2[2]) - (vetor1[2] * vetor2[1])
+        y = (vetor1[2] * vetor2[0]) - (vetor1[0] * vetor2[2])
+        z = (vetor1[0] * vetor2[1]) - (vetor1[1] * vetor2[0])
+        return (x, y, z)
+    
     def _mult_matriz_to_vetor(self, vetorU):
         matriz = self.base_ortonormal
         x = (matriz[0][0] * vetorU[0]) + (matriz[0][1] * vetorU[1]) + (matriz[0][2] * vetorU[2])
